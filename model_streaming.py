@@ -42,7 +42,7 @@ class CRNNStream(CRNN):
                 conv_output = self.conv(self._chunks_buffer).transpose(-1, -2)
             except RuntimeError as e:
                 print('Kernel size greater than current chunk size.')
-                return None
+                return torch.zeros((1, self.config.num_classes))
 
             gru_output, self._gru_hidden = self.gru(conv_output, self._gru_hidden)
 
