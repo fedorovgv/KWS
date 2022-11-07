@@ -20,15 +20,15 @@ class CRNNStream(CRNN):
 
         self._streaming: bool = streaming
         self._max_window_length: int = max_window_length
-        self._chunks_buffer_size: int = self._max_window_length * self.config.stride[1]
+        self._chunks_buffer_size: int = max_window_length * self.config.stride[1]
 
         self._gru_hidden: torch.Tensor = torch.zeros((
             config.gru_num_layers,
             1,
             config.hidden_size,
         ))
-        self._chunks_buffer: torch.Tensor = torch.Tensor([])
-        self._gru_output_buffer: torch.Tensor = torch.Tensor([])
+        self._chunks_buffer: torch.Tensor = torch.Tensor([], device=self.config.device)
+        self._gru_output_buffer: torch.Tensor = torch.Tensor([], device=self.config.device)
 
     def forward(self, chunk: torch.Tensor) -> torch.Tensor:
         if not self._streaming:
@@ -72,5 +72,5 @@ class CRNNStream(CRNN):
         self._streaming = value
 
     def _clean_buffers(self) -> None:
-        self._chunks_buffer = None
-        self._gru_output_buffer = None
+        self._chunks_buffer = torch.Tensor([], device=self.config.device)
+        self._gru_output_buffer = torch.Tensor([], device=self.config.device)
