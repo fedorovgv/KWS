@@ -51,9 +51,9 @@ class CRNN(nn.Module):
         conv_out_frequency //= config.stride[0]
         return conv_out_frequency + 1
 
-    def forward(self, input):
-        input = input.unsqueeze(dim=1)
-        conv_output = self.conv(input).transpose(-1, -2)
+    def forward(self, batch):
+        batch = batch.unsqueeze(dim=1)
+        conv_output = self.conv(batch).transpose(-1, -2)
         gru_output, _ = self.gru(conv_output)
         contex_vector = self.attention(gru_output)
         output = self.classifier(contex_vector)
