@@ -4,7 +4,7 @@ import torch.nn as nn
 from config import TaskConfig
 
 
-class Attention(torch.jit.ScriptModule):
+class Attention(nn.Module):
     def __init__(self, hidden_size: int):
         super().__init__()
         self.energy = nn.Sequential(
@@ -13,14 +13,13 @@ class Attention(torch.jit.ScriptModule):
             nn.Linear(hidden_size, 1)
         )
 
-    @torch.jit.script_method
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         energy = self.energy(batch)
         alpha = torch.softmax(energy, dim=-2)
         return (batch * alpha).sum(dim=-2)
 
 
-class CRNN(torch.jit.ScriptModule):
+class CRNN(nn.Module):
     def __init__(self, config: TaskConfig):
         super().__init__()
         self.config = config
@@ -47,13 +46,11 @@ class CRNN(torch.jit.ScriptModule):
         self.classifier = nn.Linear(config.hidden_size, config.num_classes)
 
     @staticmethod
-    @torch.jit.export
     def _get_conv_out_frequency(config: TaskConfig) -> int:
         conv_out_frequency = config.n_mels - config.kernel_size[0]
         conv_out_frequency //= config.stride[0]
         return conv_out_frequency + 1
 
-    @torch.jit.script_method
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         batch = batch.unsqueeze(dim=1)
         conv_output = self.conv(batch).transpose(-1, -2)

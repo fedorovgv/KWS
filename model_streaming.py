@@ -33,7 +33,6 @@ class CRNNStream(CRNN):
         self._chunks_buffer: torch.Tensor = torch.tensor([], device=self._device)
         self._gru_output_buffer: torch.Tensor = torch.tensor([], device=self._device)
 
-    @torch.jit.script_method
     def forward(self, chunk: torch.Tensor) -> torch.Tensor:
         if not self._streaming:
             batch = chunk.unsqueeze(dim=1)
@@ -71,18 +70,15 @@ class CRNNStream(CRNN):
         return probs
 
     @property
-    @torch.jit.export
     def streaming(self):
         return self._streaming
 
     @streaming.setter
-    @torch.jit.export
     def streaming(self, value: bool) -> None:
         if not value:
             self._clean_buffers()
         self._streaming = value
 
-    @torch.jit.export
     def _clean_buffers(self) -> None:
         self._chunks_buffer = torch.tensor([], device=self._device)
         self._gru_output_buffer = torch.tensor([], device=self._device)
