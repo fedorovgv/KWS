@@ -32,7 +32,7 @@ class CRNN(nn.Module):
             nn.Flatten(start_dim=1, end_dim=2),
         )
         self.conv_out_frequency = self._get_conv_out_frequency(config)
-        print(f'input size {self.conv_out_frequency * config.cnn_out_channels}')
+
         self.gru = nn.GRU(
             input_size=self.conv_out_frequency * config.cnn_out_channels,
             hidden_size=config.hidden_size,
