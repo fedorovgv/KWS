@@ -30,7 +30,7 @@ class CRNNStream(CRNN):
 
     def forward(self, chunk: torch.Tensor) -> torch.Tensor:
         if not self._streaming:
-            return super(CRNN, self).forward(chunk)
+            return super().forward(chunk)
         else:
             chunk = chunk.unsqueeze(dim=1)
             self._chunks_buffer = torch.cat([self._chunks_buffer, chunk], dim=-1)
