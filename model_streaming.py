@@ -14,7 +14,12 @@ class CRNNStream(CRNN):
             self,
             config: TaskConfig
     ) -> None:
-        super(CRNNStream, self).__init__(config)
+        super().__init__(config)
+
+        # field storage for torch script
+        self._device: str = config.device
+        self._num_classes: int = config.num_classes
+        self._kernel_size: tuple[int, int] = config.kernel_size
 
         self._streaming: bool = False
         self._max_window_length: int = config.max_window_length
@@ -25,22 +30,27 @@ class CRNNStream(CRNN):
             1,
             config.hidden_size,
         ))
-        self._chunks_buffer: torch.Tensor = torch.Tensor([], device=self.config.device)
-        self._gru_output_buffer: torch.Tensor = torch.Tensor([], device=self.config.device)
+        self._chunks_buffer: torch.Tensor = torch.tensor([], device=self._device)
+        self._gru_output_buffer: torch.Tensor = torch.tensor([], device=self._device)
 
     @torch.jit.script_method
     def forward(self, chunk: torch.Tensor) -> torch.Tensor:
         if not self._streaming:
-            return super().forward(chunk)
+            batch = chunk.unsqueeze(dim=1)
+            conv_output = self.conv(batch).transpose(-1, -2)
+            gru_output, _ = self.gru(conv_output)
+            contex_vector = self.attention(gru_output)
+            output = self.classifier(contex_vector)
+            return output
         else:
             chunk = chunk.unsqueeze(dim=1)
             self._chunks_buffer = torch.cat([self._chunks_buffer, chunk], dim=-1)
             self._chunks_buffer = self._chunks_buffer[:, :, :, -self._chunks_buffer_size:]
 
-            if self._chunks_buffer.size(-1) < self.config.kernel_size[1]:
+            if self._chunks_buffer.size(-1) < self._kernel_size[1]:
                 conv_output = self.conv(self._chunks_buffer).transpose(-1, -2)
             else:
-                return torch.zeros((1, self.config.num_classes))
+                return torch.zeros((1, self._num_classes))
 
             gru_output, self._gru_hidden = self.gru(conv_output, self._gru_hidden)
 
@@ -61,15 +71,18 @@ class CRNNStream(CRNN):
         return probs
 
     @property
+    @torch.jit.export
     def streaming(self):
         return self._streaming
 
     @streaming.setter
+    @torch.jit.export
     def streaming(self, value: bool) -> None:
         if not value:
             self._clean_buffers()
         self._streaming = value
 
+    @torch.jit.export
     def _clean_buffers(self) -> None:
-        self._chunks_buffer = torch.Tensor([], device=self.config.device)
-        self._gru_output_buffer = torch.Tensor([], device=self.config.device)
+        self._chunks_buffer = torch.tensor([], device=self._device)
+        self._gru_output_buffer = torch.tensor([], device=self._device)
