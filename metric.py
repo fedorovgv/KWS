@@ -2,13 +2,10 @@ import torch
 import numpy as np
 
 
-# FA - true: 0, model: 1
-# FR - true: 1, model: 0
 def count_FA_FR(preds, labels):
+    """FA - true: 0, model: 1 ; FR - true: 1, model: 0"""
     FA = torch.sum(preds[labels == 0])
     FR = torch.sum(labels[preds == 0])
-
-    # torch.numel - returns total number of elements in tensor
     return FA.item() / torch.numel(preds), FR.item() / torch.numel(preds)
 
 def get_au_fa_fr(probs, labels):
@@ -24,6 +21,4 @@ def get_au_fa_fr(probs, labels):
         FRs.append(FR)
     # plt.plot(FAs, FRs)
     # plt.show()
-
-    # ~ area under curve using trapezoidal rule
     return -np.trapz(FRs, x=FAs)

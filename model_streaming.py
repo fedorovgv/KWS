@@ -52,8 +52,8 @@ class CRNNStream(CRNN):
             else:
                 return torch.zeros((1, self._num_classes))
 
+            self.gru.flatten_parameters()
             gru_output, self._gru_hidden = self.gru(conv_output, self._gru_hidden)
-
             self._gru_output_buffer = torch.cat([self._gru_output_buffer, gru_output], dim=1)
             self._gru_output_buffer = self._gru_output_buffer[:, -self._max_window_length:, :]
 
