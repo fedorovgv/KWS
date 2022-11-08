@@ -41,6 +41,7 @@ class CRNN(nn.Module):
             bidirectional=config.bidirectional,
             batch_first=True
         )
+        self.gru.flatten_parameters()
 
         self.attention = Attention(config.hidden_size)
         self.classifier = nn.Linear(config.hidden_size, config.num_classes)
@@ -54,7 +55,6 @@ class CRNN(nn.Module):
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         batch = batch.unsqueeze(dim=1)
         conv_output = self.conv(batch).transpose(-1, -2)
-        self.gru.flatten_parameters()
         gru_output, _ = self.gru(conv_output)
         contex_vector = self.attention(gru_output)
         output = self.classifier(contex_vector)
