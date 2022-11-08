@@ -20,6 +20,7 @@ class TaskConfig:
     bidirectional: bool = False
     num_classes: int = 2
     sample_rate: int = 16000
+    max_window_length: int = 50
     device: torch.device = torch.device(
         'cuda:0' if torch.cuda.is_available() else 'cpu'
     )

@@ -12,15 +12,13 @@ logger = logging.getLogger(__file__)
 class CRNNStream(CRNN):
     def __init__(
             self,
-            config: TaskConfig,
-            max_window_length: int,
-            streaming: bool = False,
+            config: TaskConfig
     ) -> None:
         super(CRNNStream, self).__init__(config)
 
-        self._streaming: bool = streaming
-        self._max_window_length: int = max_window_length
-        self._chunks_buffer_size: int = max_window_length * self.config.stride[1]
+        self._streaming: bool = False
+        self._max_window_length: int = config.max_window_length
+        self._chunks_buffer_size: int = config.max_window_length * self.config.stride[1]
 
         self._gru_hidden: torch.Tensor = torch.zeros((
             config.gru_num_layers,
