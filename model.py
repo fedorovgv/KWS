@@ -4,7 +4,7 @@ import torch.nn as nn
 from config import TaskConfig
 
 
-class Attention(nn.Module):
+class Attention(torch.jit.ScriptModule):
     def __init__(self, hidden_size: int):
         super().__init__()
         self.energy = nn.Sequential(
@@ -13,13 +13,14 @@ class Attention(nn.Module):
             nn.Linear(hidden_size, 1)
         )
 
-    def forward(self, input):
-        energy = self.energy(input)
+    @torch.jit.script_method
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
+        energy = self.energy(batch)
         alpha = torch.softmax(energy, dim=-2)
-        return (input * alpha).sum(dim=-2)
+        return (batch * alpha).sum(dim=-2)
 
 
-class CRNN(nn.Module):
+class CRNN(torch.jit.ScriptModule):
     def __init__(self, config: TaskConfig):
         super().__init__()
         self.config = config
@@ -46,12 +47,14 @@ class CRNN(nn.Module):
         self.classifier = nn.Linear(config.hidden_size, config.num_classes)
 
     @staticmethod
-    def _get_conv_out_frequency(config):
+    @torch.jit.export
+    def _get_conv_out_frequency(config: TaskConfig) -> int:
         conv_out_frequency = config.n_mels - config.kernel_size[0]
         conv_out_frequency //= config.stride[0]
         return conv_out_frequency + 1
 
-    def forward(self, batch):
+    @torch.jit.script_method
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
         batch = batch.unsqueeze(dim=1)
         conv_output = self.conv(batch).transpose(-1, -2)
         gru_output, _ = self.gru(conv_output)

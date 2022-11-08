@@ -28,6 +28,7 @@ class CRNNStream(CRNN):
         self._chunks_buffer: torch.Tensor = torch.Tensor([], device=self.config.device)
         self._gru_output_buffer: torch.Tensor = torch.Tensor([], device=self.config.device)
 
+    @torch.jit.script_method
     def forward(self, chunk: torch.Tensor) -> torch.Tensor:
         if not self._streaming:
             return super().forward(chunk)
@@ -51,6 +52,7 @@ class CRNNStream(CRNN):
             output = self.classifier(contex_vector)
             return output
 
+    @torch.no_grad()
     def inference(self, chunk: torch.Tensor) -> torch.Tensor:
         if not self._streaming:
             self.streaming = True
