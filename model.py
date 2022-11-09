@@ -41,7 +41,6 @@ class CRNN(nn.Module):
             bidirectional=config.bidirectional,
             batch_first=True
         )
-        self.gru.flatten_parameters()
 
         self.attention = Attention(config.hidden_size)
         self.classifier = nn.Linear(config.hidden_size, config.num_classes)

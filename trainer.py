@@ -54,13 +54,15 @@ def distill_train_epoch(
         student_opt.zero_grad()
 
         teacher_logits = teacher_model(batch)
+        teacher_logits = teacher_logits.detach()
         teacher_probs = F.softmax(teacher_logits / temperature, dim=-1)
 
         student_logits = student_model(batch)
-        student_probs = F.softmax(student_logits, dim=-1)
+        student_probs = F.softmax(student_logits / temperature, dim=-1)
 
         student_loss = F.cross_entropy(student_logits, labels)
-        distill_loss = -1.0 * (teacher_probs * student_probs).sum(dim=1).mean()
+        distill_loss = F.cross_entropy(student_probs, teacher_probs)
+
         loss = alpha * student_loss + beta * distill_loss
 
         loss.backward()
@@ -70,7 +72,7 @@ def distill_train_epoch(
         if scheduler: scheduler.step()
 
         argmax_student_probs = torch.argmax(student_probs, dim=-1)
-        FA, FR = count_FA_FR(argmax_student_probs, labels)
+        # FA, FR = count_FA_FR(argmax_student_probs, labels)
         acc = torch.sum(argmax_student_probs == labels) / torch.numel(argmax_student_probs)
 
     return acc
